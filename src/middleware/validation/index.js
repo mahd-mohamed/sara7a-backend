@@ -17,6 +17,6 @@ export const generateFields = {
     name: JoiPoy.string(),
     email: JoiPoy.string().email(),
     phone: JoiPoy.string().length(11),
-    password: JoiPoy.string().length(3),
-    otp: JoiPoy.string().length(5),
+    password: JoiPoy.string().min(6),
+    otp: JoiPoy.string().length(6),
 };

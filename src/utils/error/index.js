@@ -23,34 +23,51 @@ export const globalErrorHandler = async(err, req, res, next) => {
     }
 
     //handle jwt expired
-    if (err.message == "jwt expired") {
+    if (err.message == "jwt expired" || err.message === "Unauthorized, token expired") {
         
         const {refreshtoken} = req.headers;
-        const {payload} = verifyToken(refreshtoken);
-        const refreshTokenExists = await tokenModel.findOneAndDelete({token: refreshtoken, userId: payload._id, type: "refresh"});
-
-        if (!refreshTokenExists) {
-            throw new Error("Unauthorized, token expired", { cause: 401 });
-            //log out from all devices            
+        
+        if (!refreshtoken) {
+            return res.status(401).json({
+                message: "Unauthorized, token expired",
+                success: false,
+            });
         }
 
-        const accessToken = generateToken(payload);
-        const refreshToken = generateToken(payload, "7d");
-        //save refresh token to db
-        await tokenModel.create({
-            userId: payload._id,
-            token: refreshToken,
-            type: "refresh"
-        });
-        //send response
-        return res.status(200).json({ 
-            message: "refresh token" ,
-            data:{
-                accessToken,
-                refreshToken,
-            },
-            success: true
-        });
+        try {
+            const {payload} = verifyToken(refreshtoken);
+            const refreshTokenExists = await tokenModel.findOneAndDelete({token: refreshtoken, userId: payload._id, type: "refresh"});
+
+            if (!refreshTokenExists) {
+                return res.status(401).json({
+                    message: "Unauthorized, token expired",
+                    success: false,
+                });
+            }
+
+            const accessToken = generateToken(payload);
+            const refreshToken = generateToken(payload, "7d");
+            //save refresh token to db
+            await tokenModel.create({
+                userId: payload._id,
+                token: refreshToken,
+                type: "refresh"
+            });
+            //send response
+            return res.status(200).json({ 
+                message: "refresh token" ,
+                data:{
+                    accessToken,
+                    refreshToken,
+                },
+                success: true
+            });
+        } catch (refreshError) {
+            return res.status(401).json({
+                message: "Unauthorized, token expired",
+                success: false,
+            });
+        }
     }
 
     console.error(err.stack);
