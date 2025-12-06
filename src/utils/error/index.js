@@ -23,7 +23,7 @@ export const globalErrorHandler = async(err, req, res, next) => {
     }
 
     //handle jwt expired
-    if (err.message == "jwt expired" || err.message === "Unauthorized, token expired") {
+    if (err.message == "jwt expired" || err.message == "Unauthorized, token expired") {
         
         const {refreshtoken} = req.headers;
         
@@ -31,20 +31,24 @@ export const globalErrorHandler = async(err, req, res, next) => {
             return res.status(401).json({
                 message: "Unauthorized, token expired",
                 success: false,
-            });
+            });          
         }
-
-        try {
+        
+        try{
             const {payload} = verifyToken(refreshtoken);
-            const refreshTokenExists = await tokenModel.findOneAndDelete({token: refreshtoken, userId: payload._id, type: "refresh"});
-
+            const refreshTokenExists = await tokenModel.findOneAndDelete({
+                token: refreshtoken, 
+                userId: payload._id, 
+                type: "refresh"
+            });
+            
             if (!refreshTokenExists) {
                 return res.status(401).json({
                     message: "Unauthorized, token expired",
                     success: false,
-                });
+                });          
             }
-
+            
             const accessToken = generateToken(payload);
             const refreshToken = generateToken(payload, "7d");
             //save refresh token to db
@@ -62,7 +66,8 @@ export const globalErrorHandler = async(err, req, res, next) => {
                 },
                 success: true
             });
-        } catch (refreshError) {
+
+        }catch(refreshError){
             return res.status(401).json({
                 message: "Unauthorized, token expired",
                 success: false,

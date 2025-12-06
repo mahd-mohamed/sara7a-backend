@@ -17,7 +17,7 @@ export const sendMessage = async (req, res) => {
     const attachments = files && files.length > 0 ? files.map((file) => file.path) : [];
 
     const message = await messageModel.create({
-        sender: req.user?._id,
+        sender: req.user?.id,
         receiver: receiverId,
         content,
         attachments,
@@ -40,7 +40,7 @@ export const getMessages = async (req, res) => {
 
     const messages = await messageModel.find({
         receiver: user._id,
-    }).populate('sender', 'name email profilePicture');
+    }).populate("sender", "name email profilePicture");
     
     return res.status(200).json({
         success: true,

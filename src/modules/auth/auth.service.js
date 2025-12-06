@@ -1,11 +1,11 @@
-import { userModel, tokenModel } from "../../DB/index.js";
-import { hashPassword, generateOtp, generateToken, comparePassword, sendOtpMail } from "../../utils/index.js";
-import { OAuth2Client } from "google-auth-library";
+import {userModel, tokenModel} from "../../DB/index.js";
+import {hashPassword, generateOtp, generateToken, comparePassword, sendOtpMail, encrypt} from "../../utils/index.js";
+import {OAuth2Client} from "google-auth-library";
 
 export const register = async (req, res) => {
     //get data from req.body
     const { email, name, password } = req.body;
-
+    
 
     //check if user exists
     const userExists = await userModel.findOne({ email });
@@ -17,22 +17,16 @@ export const register = async (req, res) => {
     //hash password
     const hashedPassword = await hashPassword(password);
 
-    //generate otp
-    const otp = generateOtp();
-    //send email verification (sendOtp)
-    await sendOtpMail(email, otp);
-
+    
     //create user
     const newUser = await userModel.create({
         email,
         name,
         password: hashedPassword,
-        otp,
-        otpExpiry: Date.now() + 10 * 60 * 1000,//10 minutes
     });
 
     //send response
-    res.status(201).json({
+    res.status(201).json({ 
         message: "User registered successfully",
         data: {
             id: newUser._id,
@@ -45,7 +39,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     //get data from req
-    const { email, phone, password } = req.body;
+    const { email, password } = req.body;
 
     //check if user exists
     const userExists = await userModel.findOne({ email });
@@ -58,7 +52,7 @@ export const login = async (req, res) => {
         throw new Error("User not verified", { cause: 401 });
     }
     //check if password is correct
-    const passwordMatch = await comparePassword(password, userExists.password);
+    const passwordMatch = comparePassword(password, userExists.password);
     if (!passwordMatch) {
         throw new Error("Invalid password", { cause: 401 });
     }
@@ -72,9 +66,9 @@ export const login = async (req, res) => {
         type: "refresh"
     });
     //send response
-    res.status(200).json({
+    res.status(200).json({ 
         message: "User logged in successfully",
-        data: {
+        data:{
             accessToken,
             refreshToken,
         },
@@ -114,7 +108,7 @@ export const verifyAccount = async (req, res) => {
     });
 
     //send response
-    res.status(201).json({
+    res.status(201).json({ 
         message: "User verified successfully",
         success: true
     });
@@ -135,7 +129,7 @@ export const resendOtp = async (req, res) => {
     const otp = generateOtp();
     //send email verification (sendOtp)
     await sendOtpMail(email, otp);
-
+    
     //update user
     userExists.otp = otp;
     userExists.otpExpiry = Date.now() + 10 * 60 * 1000;//10 minutes
@@ -143,7 +137,7 @@ export const resendOtp = async (req, res) => {
     await userExists.save();
 
     //send response
-    res.status(200).json({
+    res.status(200).json({ 
         message: "Otp sent successfully",
         success: true
     });
@@ -160,7 +154,7 @@ export const googleLogin = async (req, res) => {
         audience: "283113959654-2e506m15udir05v41vbb7evp97cv4b3c.apps.googleusercontent.com",
     });
     const payload = ticket.getPayload();
-    const userId = payload.sub;
+    // const userId = payload.sub;
     //check if user exists
     let userExists = await userModel.findOne({ email: payload.email });
     if (!userExists) {
@@ -173,12 +167,22 @@ export const googleLogin = async (req, res) => {
         });
     }
     //generate token
-    const token = generateToken(userExists);
+    const accessToken = generateToken(userExists);
+    const refreshToken = generateToken(userExists, "7d");
+    //save refresh token to db
+    await tokenModel.create({
+        userId: userExists._id,
+        token: refreshToken,
+        type: "refresh"
+    });
 
     //send response
-    res.status(200).json({
+    res.status(200).json({ 
         message: "User logged in successfully",
-        token,
+        data:{
+            accessToken,
+            refreshToken,
+        },
         success: true
     });
 };
@@ -219,10 +223,10 @@ export const resetPassword = async (req, res) => {
     });
 
     //delete old refresh token
-    await tokenModel.deleteMany({ userId: userExists._id, type: "refresh" });
+    await tokenModel.deleteMany({userId: userExists._id, type: "refresh"});
 
     //send response
-    res.status(200).json({
+    res.status(200).json({ 
         message: "Password reset successfully",
         success: true
     });

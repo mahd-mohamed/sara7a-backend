@@ -2,6 +2,17 @@ import {userModel, tokenModel} from "../../DB/index.js";
 import cloudinary from "../../utils/cloud/cloudinary.config.js";
 import fs from "fs";
 
+
+export const profile = async (req,res) => {
+    if(!req.user) throw new Error("not allawed user", {cause: 409})
+    
+    res.status(200).json({
+        message: "User deleted successfully",
+        data: req.user,
+        success: true
+    });
+}
+
 export const deleteProfile = async (req, res) => {
     //get user id from req
     const userId = req.user.id;

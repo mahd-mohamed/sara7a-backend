@@ -5,6 +5,8 @@ import {isAuthenticated, fileValidation} from "../../middleware/index.js";
 
 const router = Router();
 
+router.get("/profile", (req,res) => {})
+
 router.delete("/delete-profile", asyncHandler(isAuthenticated), asyncHandler(userService.deleteProfile));
 
 router.post("/upload-profile-picture",

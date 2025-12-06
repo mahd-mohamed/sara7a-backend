@@ -9,8 +9,7 @@ export const registerSchema = JoiPoy.object({
 
 
 export const loginSchema = JoiPoy.object({
-    email: generateFields.email,
-    phone: generateFields.phone,
+    email: generateFields.email.required(),
     password: generateFields.password.required(),
 });
 

@@ -21,5 +21,5 @@ export default {
     EMAIL_HOST : process.env.EMAIL_HOST ,
     EMAIL_PORT : process.env.EMAIL_PORT ,
 
-
+    FRONTEND_URLs : [process.env.FE_URL],
 }

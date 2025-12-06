@@ -7,7 +7,7 @@ import { rateLimit } from "express-rate-limit";
 
 const router = Router();
 
-// limit login attempts
+// limit login attempts & register
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 requests per 15 minutes
@@ -17,27 +17,28 @@ const loginLimiter = rateLimit({
   });
   
   // limit password reset
-  const resetLimiter = rateLimit({
+const resetLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5, // 5 requests per hour
     message: "Too many password reset requests, please try again later",
     standardHeaders: true,
     legacyHeaders: false,
-  });
+});
 
 
   //verify otp & resend otp
-  const otpLimiter = rateLimit({
+const otpLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 10, // 10 requests per hour
     message: "Too many requests, please try again later",
     standardHeaders: true,
     legacyHeaders: false,
-  });
+});
   
 
 router.post(
     "/register", 
+    loginLimiter,
     asyncHandler(isValid(authValidation.registerSchema)), 
     asyncHandler(authService.register));
 router.post(

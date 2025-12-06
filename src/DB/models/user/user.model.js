@@ -5,18 +5,13 @@ const userSchema = new Schema({
 
     email: {
         type: String, 
-        required: function() {
-            return !this.phone;
-        },
+        required: true,
         // unique: true,
         trim: true
     },
 
     phone: {
         type: String,
-        required: function() {
-            return !this.email;
-        },
         // unique: true,
         trim: true
     },
